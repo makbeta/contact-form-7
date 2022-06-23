@@ -91,11 +91,11 @@ function wpcf7_date_form_tag_handler( $tag ) {
 
 	$atts['name'] = $tag->name;
 
-	$atts = wpcf7_format_atts( $atts );
-
 	$html = sprintf(
-		'<span class="wpcf7-form-control-wrap %1$s"><input %2$s />%3$s</span>',
-		sanitize_html_class( $tag->name ), $atts, $validation_error
+		'<span class="wpcf7-form-control-wrap" data-name="%1$s"><input %2$s />%3$s</span>',
+		esc_attr( $tag->name ),
+		wpcf7_format_atts( $atts ),
+		$validation_error
 	);
 
 	return $html;
@@ -164,17 +164,17 @@ function wpcf7_date_messages( $messages ) {
 	return array_merge( $messages, array(
 		'invalid_date' => array(
 			'description' => __( "Date format that the sender entered is invalid", 'contact-form-7' ),
-			'default' => __( "The date format is incorrect.", 'contact-form-7' ),
+			'default' => __( "Please enter a date in YYYY-MM-DD format.", 'contact-form-7' ),
 		),
 
 		'date_too_early' => array(
 			'description' => __( "Date is earlier than minimum limit", 'contact-form-7' ),
-			'default' => __( "The date is before the earliest one allowed.", 'contact-form-7' ),
+			'default' => __( "This field has a too early date.", 'contact-form-7' ),
 		),
 
 		'date_too_late' => array(
 			'description' => __( "Date is later than maximum limit", 'contact-form-7' ),
-			'default' => __( "The date is after the latest one allowed.", 'contact-form-7' ),
+			'default' => __( "This field has a too late date.", 'contact-form-7' ),
 		),
 	) );
 }

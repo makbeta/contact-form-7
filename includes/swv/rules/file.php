@@ -4,8 +4,8 @@ class WPCF7_SWV_FileRule extends WPCF7_SWV_Rule {
 
 	const rule_name = 'file';
 
-	public function match( $context ) {
-		if ( false === parent::match( $context ) ) {
+	public function matches( $context ) {
+		if ( false === parent::matches( $context ) ) {
 			return false;
 		}
 
@@ -22,9 +22,22 @@ class WPCF7_SWV_FileRule extends WPCF7_SWV_Rule {
 		$input = wpcf7_array_flatten( $input );
 		$input = wpcf7_exclude_blank( $input );
 
-		$accept = (array) $this->get_property( 'accept' );
+		$acceptable_filetypes = array();
 
-		// TODO: Support MIME type strings in $accept
+		foreach ( (array) $this->get_property( 'accept' ) as $accept ) {
+			if ( false === strpos( $accept, '/' ) ) {
+				$acceptable_filetypes[] = strtolower( $accept );
+			} else {
+				foreach ( wpcf7_convert_mime_to_ext( $accept ) as $ext ) {
+					$acceptable_filetypes[] = sprintf(
+						'.%s',
+						strtolower( trim( $ext, ' .' ) )
+					);
+				}
+			}
+		}
+
+		$acceptable_filetypes = array_unique( $acceptable_filetypes );
 
 		foreach ( $input as $i ) {
 			$last_period_pos = strrpos( $i, '.' );
@@ -35,9 +48,9 @@ class WPCF7_SWV_FileRule extends WPCF7_SWV_Rule {
 				);
 			}
 
-			$suffix = substr( $i, $last_period_pos );
+			$suffix = strtolower( substr( $i, $last_period_pos ) );
 
-			if ( ! in_array( $suffix, $accept, true ) ) {
+			if ( ! in_array( $suffix, $acceptable_filetypes, true ) ) {
 				return new WP_Error( 'wpcf7_invalid_file',
 					$this->get_property( 'error' )
 				);

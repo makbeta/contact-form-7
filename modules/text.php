@@ -95,11 +95,11 @@ function wpcf7_text_form_tag_handler( $tag ) {
 
 	$atts['name'] = $tag->name;
 
-	$atts = wpcf7_format_atts( $atts );
-
 	$html = sprintf(
-		'<span class="wpcf7-form-control-wrap %1$s"><input %2$s />%3$s</span>',
-		sanitize_html_class( $tag->name ), $atts, $validation_error
+		'<span class="wpcf7-form-control-wrap" data-name="%1$s"><input %2$s />%3$s</span>',
+		esc_attr( $tag->name ),
+		wpcf7_format_atts( $atts ),
+		$validation_error
 	);
 
 	return $html;
@@ -187,21 +187,21 @@ function wpcf7_text_messages( $messages ) {
 			'description' =>
 				__( "Email address that the sender entered is invalid", 'contact-form-7' ),
 			'default' =>
-				__( "The e-mail address entered is invalid.", 'contact-form-7' ),
+				__( "Please enter an email address.", 'contact-form-7' ),
 		),
 
 		'invalid_url' => array(
 			'description' =>
 				__( "URL that the sender entered is invalid", 'contact-form-7' ),
 			'default' =>
-				__( "The URL is invalid.", 'contact-form-7' ),
+				__( "Please enter a URL.", 'contact-form-7' ),
 		),
 
 		'invalid_tel' => array(
 			'description' =>
 				__( "Telephone number that the sender entered is invalid", 'contact-form-7' ),
 			'default' =>
-				__( "The telephone number is invalid.", 'contact-form-7' ),
+				__( "Please enter a telephone number.", 'contact-form-7' ),
 		),
 	) );
 

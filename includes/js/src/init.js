@@ -49,9 +49,7 @@ export default function init( form ) {
 	} );
 
 	form.addEventListener( 'submit', event => {
-		const submitter = event.submitter;
-		wpcf7.submit( form, { submitter } );
-
+		wpcf7.submit( form, { submitter: event.submitter } );
 		event.preventDefault();
 	} );
 
@@ -83,14 +81,8 @@ export default function init( form ) {
 	} );
 
 	form.addEventListener( 'change', event => {
-		const context = {
-			field: event.target.name,
-		};
-
-		try {
-			wpcf7.validate( form, context );
-		} catch ( error ) {
-			console.error( error );
+		if ( event.target.closest( '.wpcf7-form-control' ) ) {
+			wpcf7.validate( form, { target: event.target } );
 		}
 	} );
 }
