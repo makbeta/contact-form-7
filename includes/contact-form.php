@@ -503,6 +503,7 @@ class WPCF7_ContactForm {
 		$args = wp_parse_args( $args, array(
 			'html_id' => '',
 			'html_name' => '',
+			'html_title' => '',
 			'html_class' => '',
 			'output' => 'form',
 		) );
@@ -541,8 +542,7 @@ class WPCF7_ContactForm {
 
 		$html = sprintf( '<div %s>',
 			wpcf7_format_atts( array(
-				'role' => 'form',
-				'class' => 'wpcf7',
+				'class' => 'wpcf7 no-js',
 				'id' => $this->unit_tag(),
 				( get_option( 'html_type' ) == 'text/html' ) ? 'lang' : 'xml:lang'
 					=> $lang_tag,
@@ -569,6 +569,8 @@ class WPCF7_ContactForm {
 		$name_attr = apply_filters( 'wpcf7_form_name_attr',
 			preg_replace( '/[^A-Za-z0-9:._-]/', '', $args['html_name'] )
 		);
+
+		$title_attr = apply_filters( 'wpcf7_form_title_attr', $args['html_title'] );
 
 		$class = 'wpcf7-form';
 
@@ -600,30 +602,22 @@ class WPCF7_ContactForm {
 		$class = implode( ' ', $class );
 		$class = apply_filters( 'wpcf7_form_class_attr', $class );
 
-		$enctype = apply_filters( 'wpcf7_form_enctype', '' );
+		$enctype = wpcf7_enctype_value( apply_filters( 'wpcf7_form_enctype', '' ) );
 		$autocomplete = apply_filters( 'wpcf7_form_autocomplete', '' );
-
-		$novalidate = apply_filters( 'wpcf7_form_novalidate',
-			wpcf7_support_html5()
-		);
 
 		$atts = array(
 			'action' => esc_url( $url ),
 			'method' => 'post',
-			'class' => $class,
-			'enctype' => wpcf7_enctype_value( $enctype ),
-			'autocomplete' => $autocomplete,
-			'novalidate' => $novalidate ? 'novalidate' : '',
+			'class' => ( '' !== $class ) ? $class : null,
+			'id' => ( '' !== $id_attr ) ? $id_attr : null,
+			'name' => ( '' !== $name_attr ) ? $name_attr : null,
+			'aria-label' => ( '' !== $title_attr )
+				? $title_attr : __( 'Contact form', 'contact-form-7' ),
+			'enctype' => ( '' !== $enctype ) ? $enctype : null,
+			'autocomplete' => ( '' !== $autocomplete ) ? $autocomplete : null,
+			'novalidate' => true,
 			'data-status' => $data_status_attr,
 		);
-
-		if ( '' !== $id_attr ) {
-			$atts['id'] = $id_attr;
-		}
-
-		if ( '' !== $name_attr ) {
-			$atts['name'] = $name_attr;
-		}
 
 		$atts = wpcf7_format_atts( $atts );
 
@@ -775,19 +769,20 @@ class WPCF7_ContactForm {
 						);
 					}
 
-					$validation_error_id = sprintf(
-						'%1$s-ve-%2$s',
-						$this->unit_tag(),
-						$name
+					$validation_error_id = wpcf7_get_validation_error_reference(
+						$name,
+						$this->unit_tag()
 					);
 
-					$list_item = sprintf(
-						'<li id="%1$s">%2$s</li>',
-						$validation_error_id,
-						$list_item
-					);
+					if ( $validation_error_id ) {
+						$list_item = sprintf(
+							'<li id="%1$s">%2$s</li>',
+							esc_attr( $validation_error_id ),
+							$list_item
+						);
 
-					$validation_errors[] = $list_item;
+						$validation_errors[] = $list_item;
+					}
 				}
 			}
 		}

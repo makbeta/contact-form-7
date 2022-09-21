@@ -1,11 +1,14 @@
 import { setStatus } from './status';
-import * as validators from './swv/rules';
-import FormDataTree from './swv/form-data-tree';
-import { ValidationError } from './swv/error';
 
 
 export default function validate( form, options = {} ) {
 	const scope = form;
+
+	const schema = { ...form.wpcf7?.schema };
+
+	if ( undefined === schema ) {
+		return;
+	}
 
 	// Event target is not a wpcf7 form control.
 	if ( ! options.target?.closest( '.wpcf7-form-control-wrap[data-name]' ) ) {
@@ -72,47 +75,22 @@ export default function validate( form, options = {} ) {
 		}
 	}
 
-	const validators = validate.validators ?? {};
-
-	const rules = ( form.wpcf7.schema.rules ?? [] ).filter(
-		( { rule, ...properties } ) => {
-
-			if ( 'function' !== typeof validators[rule] ) {
-				return false;
-			}
-
-			if ( 'function' === typeof validators[rule].matches ) {
-				return validators[rule].matches( properties, options );
-			}
-
-			return targetFields.includes( properties.field );
-		}
+	schema.rules = ( schema.rules ?? [] ).filter(
+		( { field } ) => targetFields.includes( field )
 	);
-
-	// There is no rule to validate.
-	if ( ! rules.length ) {
-		return;
-	}
 
 	const prevStatus = form.getAttribute( 'data-status' );
 
 	Promise.resolve( setStatus( form, 'validating' ) )
 		.then( status => {
-			const invalidFields = [];
-			const formDataTree = new FormDataTree( formData );
+			if ( undefined !== swv ) {
+				const result = swv.validate( schema, formData, options );
 
-			for ( const { rule, ...properties } of rules ) {
-				if ( invalidFields.includes( properties.field ) ) {
-					continue;
-				}
+				for ( const [ field, { error } ] of result ) {
+					removeValidationError( form, field );
 
-				try {
-					removeValidationError( form, properties.field );
-					validators[rule].call( { rule, ...properties }, formDataTree );
-				} catch ( error ) {
-					if ( error instanceof ValidationError ) {
-						setValidationError( form, properties.field, error.error );
-						invalidFields.push( properties.field );
+					if ( undefined !== error ) {
+						setValidationError( form, field, error );
 					}
 				}
 			}
@@ -128,11 +106,10 @@ export default function validate( form, options = {} ) {
 		} );
 }
 
-validate.validators = validators;
-
 
 export const setValidationError = ( form, fieldName, message ) => {
-	const errorId = `${ form.wpcf7?.unitTag }-ve-${ fieldName }`;
+	const errorId = `${ form.wpcf7?.unitTag }-ve-${ fieldName }`
+		.replaceAll( /[^0-9a-z_-]+/ig, '' );
 
 	const firstFoundControl = form.querySelector(
 		`.wpcf7-form-control-wrap[data-name="${ fieldName }"] .wpcf7-form-control`
@@ -208,7 +185,8 @@ export const setValidationError = ( form, fieldName, message ) => {
 
 
 export const removeValidationError = ( form, fieldName ) => {
-	const errorId = `${ form.wpcf7?.unitTag }-ve-${ fieldName }`;
+	const errorId = `${ form.wpcf7?.unitTag }-ve-${ fieldName }`
+		.replaceAll( /[^0-9a-z_-]+/ig, '' );
 
 	form.wpcf7.parent.querySelector(
 		`.screen-reader-response ul li#${ errorId }`

@@ -45,7 +45,7 @@ function wpcf7_captchac_form_tag_handler( $tag ) {
 	}
 
 	$class = wpcf7_form_controls_class( $tag->type );
-	$class .= ' wpcf7-captcha-' . $tag->name;
+	$class .= ' wpcf7-captcha-' . str_replace( ':', '', $tag->name );
 
 	$atts = array();
 	$atts['class'] = $tag->get_class_option( $class );
@@ -82,8 +82,10 @@ function wpcf7_captchac_form_tag_handler( $tag ) {
 	$prefix = substr( $filename, 0, strrpos( $filename, '.' ) );
 
 	$html = sprintf(
-		'<input type="hidden" name="_wpcf7_captcha_challenge_%1$s" value="%2$s" /><img %3$s />',
-		$tag->name, esc_attr( $prefix ), $atts
+		'<input type="hidden" name="%1$s" value="%2$s" /><img %3$s />',
+		esc_attr( sprintf( '_wpcf7_captcha_challenge_%s', $tag->name ) ),
+		esc_attr( $prefix ),
+		$atts
 	);
 
 	return $html;
@@ -470,7 +472,7 @@ function wpcf7_captcha_url( $filename ) {
 		$url = 'https:' . substr( $url, 5 );
 	}
 
-	return apply_filters( 'wpcf7_captcha_url', esc_url_raw( $url ) );
+	return apply_filters( 'wpcf7_captcha_url', sanitize_url( $url ) );
 }
 
 function wpcf7_generate_captcha( $options = null ) {
