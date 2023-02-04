@@ -9,6 +9,7 @@ window.wpcf7 = window.wpcf7 ?? {
 import icon from './icon';
 import edit from './edit';
 import transforms from './transforms';
+import { createShortcode } from './helpers';
 
 registerBlockType( 'contact-form-7/contact-form-selector', {
 	icon,
@@ -18,45 +19,7 @@ registerBlockType( 'contact-form-7/contact-form-selector', {
 	edit,
 
 	save: ( { attributes } ) => {
-
-		attributes = {
-			id: attributes.id ?? window.wpcf7.contactForms[ 0 ]?.id,
-			title: attributes.title ?? window.wpcf7.contactForms[ 0 ]?.title,
-			...attributes
-		};
-
-		let shortcode =
-			`[contact-form-7 id="${ attributes.id }" title="${ attributes.title }"]`;
-
-		if ( attributes.htmlId ) {
-			shortcode = shortcode.replace( /\]$/,
-				` html_id="${ attributes.htmlId }"]`
-			);
-		}
-
-		if ( attributes.htmlName ) {
-			shortcode = shortcode.replace( /\]$/,
-				` html_name="${ attributes.htmlName }"]`
-			);
-		}
-
-		if ( attributes.htmlTitle ) {
-			shortcode = shortcode.replace( /\]$/,
-				` html_title="${ attributes.htmlTitle }"]`
-			);
-		}
-
-		if ( attributes.htmlClass ) {
-			shortcode = shortcode.replace( /\]$/,
-				` html_class="${ attributes.htmlClass }"]`
-			);
-		}
-
-		if ( 'raw_form' === attributes.output ) {
-			shortcode = shortcode.replace( /\]$/,
-				` output="${ attributes.output }"]`
-			);
-		}
+		const shortcode = createShortcode( attributes );
 
 		return(
 			<div { ...useBlockProps.save() }>

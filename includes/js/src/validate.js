@@ -2,21 +2,31 @@ import { setStatus } from './status';
 
 
 export default function validate( form, options = {} ) {
-	const scope = form;
+	const {
+		target,
+		scope = form,
+		...remainingOptions
+	} = options;
 
-	const schema = { ...form.wpcf7?.schema };
-
-	if ( undefined === schema ) {
+	if ( undefined === form.wpcf7?.schema ) {
 		return;
 	}
 
-	// Event target is not a wpcf7 form control.
-	if ( ! options.target?.closest( '.wpcf7-form-control-wrap[data-name]' ) ) {
-		return;
-	}
+	const schema = { ...form.wpcf7.schema };
 
-	if ( options.target?.closest( '.novalidate' ) ) {
-		return;
+	if ( undefined !== target ) {
+		if ( ! form.contains( target ) ) {
+			return;
+		}
+
+		// Event target is not a wpcf7 form control.
+		if ( ! target.closest( '.wpcf7-form-control-wrap[data-name]' ) ) {
+			return;
+		}
+
+		if ( target.closest( '.novalidate' ) ) {
+			return;
+		}
 	}
 
 	const formData = new FormData();
@@ -67,9 +77,7 @@ export default function validate( form, options = {} ) {
 
 			wrap.setAttribute( 'data-under-validation', '1' );
 
-			if (
-				wrap.dataset.name === options.target.name.replace( /\[.*\]$/, '' )
-			) {
+			if ( wrap.contains( target ) ) {
 				break;
 			}
 		}
@@ -86,12 +94,14 @@ export default function validate( form, options = {} ) {
 			if ( undefined !== swv ) {
 				const result = swv.validate( schema, formData, options );
 
-				for ( const [ field, { error } ] of result ) {
+				for ( const [ field, { error, validInputs } ] of result ) {
 					removeValidationError( form, field );
 
 					if ( undefined !== error ) {
-						setValidationError( form, field, error );
+						setValidationError( form, field, error, { scope } );
 					}
+
+					updateReflection( form, field, validInputs ?? [] );
 				}
 			}
 		} )
@@ -107,7 +117,12 @@ export default function validate( form, options = {} ) {
 }
 
 
-export const setValidationError = ( form, fieldName, message ) => {
+export const setValidationError = ( form, fieldName, message, options ) => {
+	const {
+		scope = form,
+		...remainingOptions
+	} = options ?? {};
+
 	const errorId = `${ form.wpcf7?.unitTag }-ve-${ fieldName }`
 		.replaceAll( /[^0-9a-z_-]+/ig, '' );
 
@@ -138,7 +153,7 @@ export const setValidationError = ( form, fieldName, message ) => {
 	};
 
 	const setVisualValidationError = () => {
-		form.querySelectorAll(
+		scope.querySelectorAll(
 			`.wpcf7-form-control-wrap[data-name="${ fieldName }"]`
 		).forEach( wrap => {
 			if (
@@ -209,5 +224,57 @@ export const removeValidationError = ( form, fieldName ) => {
 				control.setCustomValidity( '' );
 			}
 		} );
+	} );
+};
+
+
+export const updateReflection = ( form, field, validInputs ) => {
+	form.querySelectorAll(
+		`[data-reflection-of="${ field }"]`
+	).forEach( reflection => {
+		if ( 'output' === reflection.tagName.toLowerCase() ) {
+			const output = reflection;
+
+			if ( 0 === validInputs.length ) {
+				validInputs.push( output.dataset.default );
+			}
+
+			validInputs.slice( 0, 1 ).forEach( input => {
+				if ( input instanceof File ) {
+					input = input.name;
+				}
+
+				output.textContent = input;
+			} );
+
+		} else {
+			reflection.querySelectorAll(
+				'output'
+			).forEach( output => {
+				if ( output.hasAttribute( 'data-default' ) ) {
+					if ( 0 === validInputs.length ) {
+						output.removeAttribute( 'hidden' );
+					} else {
+						output.setAttribute( 'hidden', 'hidden' );
+					}
+				} else {
+					output.remove();
+				}
+			} );
+
+			validInputs.forEach( input => {
+
+				if ( input instanceof File ) {
+					input = input.name;
+				}
+
+				const output = document.createElement( 'output' );
+
+				output.setAttribute( 'name', field );
+				output.textContent = input;
+
+				reflection.appendChild( output );
+			} );
+		}
 	} );
 };

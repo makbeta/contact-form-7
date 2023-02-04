@@ -90,7 +90,7 @@ class WPCF7_Mail {
 			'</body>
 </html>', $this );
 
-		$html = $header . wpautop( $body ) . $footer;
+		$html = $header . wpcf7_autop( $body ) . $footer;
 		return $html;
 	}
 
@@ -387,7 +387,9 @@ class WPCF7_MailTaggedText {
 				$replaced = $this->format( $replaced, $format );
 			}
 
-			$replaced = wpcf7_flat_join( $replaced );
+			$replaced = wpcf7_flat_join( $replaced, array(
+				'separator' => wp_get_list_item_separator(),
+			) );
 
 			if ( $html ) {
 				$replaced = esc_html( $replaced );
