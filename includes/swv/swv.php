@@ -19,8 +19,10 @@ function wpcf7_swv_available_rules() {
 		'tel' => 'WPCF7_SWV_TelRule',
 		'number' => 'WPCF7_SWV_NumberRule',
 		'date' => 'WPCF7_SWV_DateRule',
+		'time' => 'WPCF7_SWV_TimeRule',
 		'file' => 'WPCF7_SWV_FileRule',
 		'enum' => 'WPCF7_SWV_EnumRule',
+		'dayofweek' => 'WPCF7_SWV_DayofweekRule',
 		'minitems' => 'WPCF7_SWV_MinItemsRule',
 		'maxitems' => 'WPCF7_SWV_MaxItemsRule',
 		'minlength' => 'WPCF7_SWV_MinLengthRule',
@@ -254,7 +256,7 @@ abstract class WPCF7_SWV_CompositeRule extends WPCF7_SWV_Rule {
 	 */
 	public function to_array() {
 		$rules_arrays = array_map(
-			function ( $rule ) {
+			static function ( $rule ) {
 				return $rule->to_array();
 			},
 			$this->rules
