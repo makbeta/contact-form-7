@@ -18,6 +18,7 @@ class WPCF7_ContactForm {
 	private $responses_count = 0;
 	private $scanned_form_tags;
 	private $shortcode_atts = array();
+	private $hash = '';
 
 
 	/**
@@ -33,7 +34,7 @@ class WPCF7_ContactForm {
 	/**
 	 * Returns the contact form that is currently processed.
 	 *
-	 * @return WPCF7_ContactForm Current contact form object.
+	 * @return WPCF7_ContactForm|null Current contact form object. Null if unset.
 	 */
 	public static function get_current() {
 		return self::$current;
@@ -108,61 +109,68 @@ class WPCF7_ContactForm {
 	 */
 	public static function get_template( $args = '' ) {
 		$args = wp_parse_args( $args, array(
-			'locale' => '',
+			'locale' => null,
 			'title' => __( 'Untitled', 'contact-form-7' ),
 		) );
 
-		$locale = $args['locale'];
-		$title = $args['title'];
-
-		if ( ! $switched = wpcf7_load_textdomain( $locale ) ) {
-			$locale = determine_locale();
+		if ( ! isset( $args['locale'] ) ) {
+			$args['locale'] = determine_locale();
 		}
 
-		$contact_form = new self;
-		$contact_form->title = $title;
-		$contact_form->locale = $locale;
+		$callback = static function ( $args ) {
+			$contact_form = new self;
+			$contact_form->title = $args['title'];
+			$contact_form->locale = $args['locale'];
 
-		$properties = $contact_form->get_properties();
+			$properties = $contact_form->get_properties();
 
-		foreach ( $properties as $key => $value ) {
-			$default_template = WPCF7_ContactFormTemplate::get_default( $key );
+			foreach ( $properties as $key => $value ) {
+				$default_template = WPCF7_ContactFormTemplate::get_default( $key );
 
-			if ( isset( $default_template ) ) {
-				$properties[$key] = $default_template;
+				if ( isset( $default_template ) ) {
+					$properties[$key] = $default_template;
+				}
 			}
-		}
 
-		$contact_form->properties = $properties;
+			$contact_form->properties = $properties;
 
-		$contact_form = apply_filters( 'wpcf7_contact_form_default_pack',
+			return $contact_form;
+		};
+
+		$contact_form = wpcf7_switch_locale(
+			$args['locale'],
+			$callback,
+			$args
+		);
+
+		self::$current = apply_filters( 'wpcf7_contact_form_default_pack',
 			$contact_form, $args
 		);
 
-		if ( $switched ) {
-			wpcf7_load_textdomain();
-		}
-
-		self::$current = $contact_form;
-
-		return $contact_form;
+		return self::$current;
 	}
 
 
 	/**
-	 * Returns an instance of WPCF7_ContactForm.
+	 * Creates a WPCF7_ContactForm object and sets it as the current instance.
 	 *
-	 * @return WPCF7_ContactForm A new contact form object.
+	 * @param WPCF7_ContactForm|WP_Post|int $post Object or post ID.
+	 * @return WPCF7_ContactForm|null Contact form object. Null if unset.
 	 */
 	public static function get_instance( $post ) {
-		$post = get_post( $post );
+		$contact_form = null;
 
-		if ( ! $post
-		or self::post_type != get_post_type( $post ) ) {
-			return false;
+		if ( $post instanceof self ) {
+			$contact_form = $post;
+		} elseif ( ! empty( $post ) ) {
+			$post = get_post( $post );
+
+			if ( isset( $post ) and self::post_type === get_post_type( $post ) ) {
+				$contact_form = new self( $post );
+			}
 		}
 
-		return self::$current = new self( $post );
+		return self::$current = $contact_form;
 	}
 
 
@@ -200,11 +208,12 @@ class WPCF7_ContactForm {
 		$post = get_post( $post );
 
 		if ( $post
-		and self::post_type == get_post_type( $post ) ) {
+		and self::post_type === get_post_type( $post ) ) {
 			$this->id = $post->ID;
 			$this->name = $post->post_name;
 			$this->title = $post->post_title;
 			$this->locale = get_post_meta( $post->ID, '_locale', true );
+			$this->hash = get_post_meta( $post->ID, '_hash', true );
 
 			$this->construct_properties( $post );
 			$this->upgrade();
@@ -282,7 +291,7 @@ class WPCF7_ContactForm {
 		// Filtering out properties with invalid name
 		$properties = array_filter(
 			$properties,
-			function ( $key ) {
+			static function ( $key ) {
 				$sanitized_key = sanitize_key( $key );
 				return $key === $sanitized_key;
 			},
@@ -465,6 +474,17 @@ class WPCF7_ContactForm {
 
 
 	/**
+	 * Retrieves the random hash string tied to this contact form.
+	 *
+	 * @param int $length Length of hash string.
+	 * @return string Hash string unique to this contact form.
+	 */
+	public function hash( $length = 7 ) {
+		return substr( $this->hash, 0, absint( $length ) );
+	}
+
+
+	/**
 	 * Returns the specified shortcode attribute value.
 	 *
 	 * @param string $name Shortcode attribute name.
@@ -540,7 +560,7 @@ class WPCF7_ContactForm {
 			$lang_tag = $matches[1];
 		}
 
-		$html = sprintf( '<div %s>',
+		$html = "\n" . sprintf( '<div %s>',
 			wpcf7_format_atts( array(
 				'class' => 'wpcf7 no-js',
 				'id' => $this->unit_tag(),
@@ -619,9 +639,9 @@ class WPCF7_ContactForm {
 			'data-status' => $data_status_attr,
 		);
 
-		$atts = wpcf7_format_atts( $atts );
+		$atts += (array) apply_filters( 'wpcf7_form_additional_atts', array() );
 
-		$html .= sprintf( '<form %s>', $atts ) . "\n";
+		$html .= sprintf( '<form %s>', wpcf7_format_atts( $atts ) ) . "\n";
 		$html .= $this->form_hidden_fields();
 		$html .= $this->form_elements();
 
@@ -629,10 +649,10 @@ class WPCF7_ContactForm {
 			$html .= $this->form_response_output();
 		}
 
-		$html .= '</form>';
-		$html .= '</div>';
+		$html .= "\n" . '</form>';
+		$html .= "\n" . '</div>';
 
-		return $html;
+		return $html . "\n";
 	}
 
 
@@ -852,8 +872,9 @@ class WPCF7_ContactForm {
 		$form = $this->prop( 'form' );
 
 		if ( wpcf7_autop_or_not() ) {
-			$form = $manager->normalize( $form );
+			$form = $manager->replace_with_placeholders( $form );
 			$form = wpcf7_autop( $form );
+			$form = $manager->restore_from_placeholders( $form );
 		}
 
 		$form = $manager->replace_all( $form );
@@ -1255,6 +1276,11 @@ class WPCF7_ContactForm {
 				update_post_meta( $post_id, '_locale', $this->locale );
 			}
 
+			add_post_meta( $post_id, '_hash',
+				wpcf7_generate_contact_form_hash( $post_id ),
+				true // Unique
+			);
+
 			if ( $this->initial() ) {
 				$this->id = $post_id;
 				do_action( 'wpcf7_after_create', $this );
@@ -1325,8 +1351,8 @@ class WPCF7_ContactForm {
 			}
 		} else {
 			$shortcode = sprintf(
-				'[contact-form-7 id="%1$d" title="%2$s"]',
-				$this->id,
+				'[contact-form-7 id="%1$s" title="%2$s"]',
+				$this->hash(),
 				$title
 			);
 		}
