@@ -419,6 +419,9 @@ function wpcf7_enctype_value( $enctype ) {
  * @return bool True on success, false on failure.
  */
 function wpcf7_rmdir_p( $dir ) {
+	if ( defined( 'WPCF7_KEEP_UPLOADS' && WPCF7_KEEP_UPLOADS ) {
+		return;
+	}
 	if ( is_file( $dir ) ) {
 		$file = $dir;
 

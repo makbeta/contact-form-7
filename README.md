@@ -29,3 +29,38 @@ You can contribute to the project of Contact Form 7 in several ways. For more in
 
 
 <br/><br/><p align="center"><img src="https://s.w.org/style/images/codeispoetry.png?1" alt="Code is Poetry." /></p>
+
+
+Added Features
+--------------
+
+A list of features that are present in this repository, but were not accepted by the Contact Form 7 plugin.
+
+## Upload Folder Outside the `wp-content` Directory
+For many modern hosts, such as Pantheon, the files reside at an different folder path than `wp-content/uploads` and `wp-content/uploads` is just an alias. In those cases, the uploads fail to be saved and attached to the email. Multiple issues raised by the community:
+This repository presents a solution for the problem. **Note** be sure that your upload folder is a private folder, not a publically accessible one to ensure security and integrity of the server. 
+
+To implement:
+* Install the plugin from the repository on your site, or replace installed plugin with source code from this repository
+* Define `WPCF7_UPLOADS_TMP_DIR` to your _wp-config.php_ file and point to the folder path of your upload folder.
+* Define `WPCF7_UPLOADS_TMP_IN_WP_CONTENT` variable to your _wp_config.php_ file and set it to `false`.
+
+For Pantheon servers the snippet would look like this:
+```php
+define( 'WPCF7_UPLOADS_TMP_IN_WP_CONTENT', false );
+define( 'WPCF7_UPLOADS_TMP_DIR', '/private' );
+```
+
+## Keep Uploaded Files
+In some instances the uploaded files must be kept. This repository also provides for this solution.
+**Note** be sure that your upload folder is a private folder, not a publically accessible one to ensure security and integrity of the server. 
+
+
+To implement:
+* Install the plugin from the repository on your site, or replace installed plugin with source code from this repository
+* Define `WPCF7_KEEP_UPLOADS` variable to your _wp_config.php_ file and set it to `true`.
+
+Example:
+```php
+define( 'WPCF7_KEEP_UPLOADS', true );
+```
