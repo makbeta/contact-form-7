@@ -37,8 +37,8 @@ Added Features
 A list of features that are present in this repository, but were not accepted by the Contact Form 7 plugin.
 
 ### Upload Folder Outside the `wp-content` Directory
-For many modern hosts, such as Pantheon, the files reside at an different folder path than `wp-content/uploads` and `wp-content/uploads` is just an alias. In those cases, the uploads fail to be saved and attached to the email. Multiple issues were raised by the community: [154](https://github.com/rocklobster-in/contact-form-7/issues/154), [475](https://github.com/rocklobster-in/contact-form-7/issues/475), [707](https://github.com/rocklobster-in/contact-form-7/issues/707), [1282](https://github.com/rocklobster-in/contact-form-7/issues/1282), sadly [the author has rejected the request](https://github.com/rocklobster-in/contact-form-7/pull/708) for the plugin functionality to be extended, [citing security isses](https://github.com/rocklobster-in/contact-form-7/issues/507), which are not clearly stated [or explained]((https://github.com/rocklobster-in/contact-form-7/issues/507#issuecomment-1044129543)) even [when questioned](https://github.com/rocklobster-in/contact-form-7/issues/707#issuecomment-1350732394). 
-This repository presents a solution for the problem. **Note** be sure that your upload folder is a private folder, not a publically accessible one to ensure security and integrity of the server. 
+For many modern hosts, such as Pantheon, the files reside at an different folder path than `wp-content/uploads` and `wp-content/uploads` is just an alias. In those cases, the uploads fail to be saved and attached to the email. Multiple issues were raised by the community: [154](https://github.com/rocklobster-in/contact-form-7/issues/154), [475](https://github.com/rocklobster-in/contact-form-7/issues/475), [707](https://github.com/rocklobster-in/contact-form-7/issues/707), [1282](https://github.com/rocklobster-in/contact-form-7/issues/1282), sadly [the author has rejected the request](https://github.com/rocklobster-in/contact-form-7/pull/708) for the plugin functionality to be extended, [citing security isses](https://github.com/rocklobster-in/contact-form-7/issues/507), which are not clearly stated [or explained](https://github.com/rocklobster-in/contact-form-7/issues/507#issuecomment-1044129543), even [when questioned](https://github.com/rocklobster-in/contact-form-7/issues/707#issuecomment-1350732394). 
+This repository presents a solution for the problem. **Note**, be sure that your upload folder is a private folder, not a publically accessible one, to ensure security and integrity of the server. 
 
 To implement:
 * Install the plugin from the repository on your site, or replace installed plugin with source code from this repository
@@ -53,7 +53,7 @@ define( 'WPCF7_UPLOADS_TMP_DIR', '/private' );
 
 ### Keep Uploaded Files
 In some instances the uploaded files must be kept. This repository also provides for this solution.
-**Note** be sure that your upload folder is a private folder, not a publically accessible one to ensure security and integrity of the server. 
+**Note**, be sure that your upload folder is a private folder, not a publically accessible one, to ensure security and integrity of the server. 
 
 
 To implement:
